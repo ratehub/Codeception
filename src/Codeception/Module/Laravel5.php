@@ -6,6 +6,7 @@ use Codeception\Exception\ModuleException;
 use Codeception\Lib\Connector\Laravel5 as LaravelConnector;
 use Codeception\Lib\Framework;
 use Codeception\Lib\Interfaces\ActiveRecord;
+use Codeception\Lib\Interfaces\DoctrineProvider;
 use Codeception\Lib\Interfaces\PartedModule;
 use Codeception\Lib\ModuleContainer;
 use Codeception\Subscriber\ErrorHandler;
@@ -89,7 +90,7 @@ use Illuminate\Support\Collection;
  *
  *
  */
-class Laravel5 extends Framework implements ActiveRecord, PartedModule
+class Laravel5 extends Framework implements DoctrineProvider, ActiveRecord, PartedModule
 {
 
     /**
@@ -164,7 +165,7 @@ class Laravel5 extends Framework implements ActiveRecord, PartedModule
      */
     public function _before(\Codeception\TestInterface $test)
     {
-        $this->client = new LaravelConnector($this);
+        $this->client = $this->client ?: new LaravelConnector($this);
 
         // Database migrations should run before database cleanup transaction starts
         if ($this->config['run_database_migrations']) {
@@ -205,6 +206,16 @@ class Laravel5 extends Framework implements ActiveRecord, PartedModule
                 }
             }
         }
+    }
+
+    /**
+     * Build and return our entity manager.
+     *
+     */
+    public function _getEntityManager()
+    {
+        $this->client = $this->client ?: new LaravelConnector($this);
+        return $this->app->make('em');
     }
 
     /**
