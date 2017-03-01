@@ -103,6 +103,8 @@ class Laravel5 extends Framework implements DoctrineProvider, ActiveRecord, Part
      */
     public $config = [];
 
+
+    private $entityManager;
     /**
      * Constructor.
      *
@@ -165,7 +167,23 @@ class Laravel5 extends Framework implements DoctrineProvider, ActiveRecord, Part
      */
     public function _before(\Codeception\TestInterface $test)
     {
-        $this->client = $this->client ?: new LaravelConnector($this);
+        if ($this->client === null) {
+            $this->client = new LaravelConnector($this);
+        }
+
+
+        $db = $this->app['db'];
+
+        if ($db) {
+            /**
+             *
+             * @var \Illuminate\Database\Connection $connection
+             */
+            foreach ($db->getConnections() as $connection) {
+                $connection->reconnect();
+            }
+        }
+
 
         // Database migrations should run before database cleanup transaction starts
         if ($this->config['run_database_migrations']) {
@@ -214,8 +232,13 @@ class Laravel5 extends Framework implements DoctrineProvider, ActiveRecord, Part
      */
     public function _getEntityManager()
     {
-        $this->client = $this->client ?: new LaravelConnector($this);
-        return $this->app->make('em');
+        if ($this->client === null)
+            $this->client = new LaravelConnector($this);
+
+        if ($this->entityManager === null)
+            $this->entityManager = $this->app->make('em');
+
+        return $this->entityManager;
     }
 
     /**
